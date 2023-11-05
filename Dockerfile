@@ -1,20 +1,50 @@
-# "ported" by Adam Miller <maxamillion@fedoraproject.org> from
-#   https://github.com/fedora-cloud/Fedora-Dockerfiles
-#
-# Originally written for Fedora-Dockerfiles by
-#   scollier <scollier@redhat.com>
+FROM debian:buster
 
-FROM centos:centos7
-MAINTAINER The CentOS Project <cloud-ops@centos.org>
+RUN apt update && \
+    apt install -y \
+    qemu-kvm \
+    *zenhei* \
+    xz-utils \
+    dbus-x11 \
+    curl \
+    firefox-esr \
+    gnome-system-monitor \
+    mate-system-monitor \
+    git \
+    xfce4 \
+    xfce4-terminal \
+    tightvncserver \
+    wget && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN yum -y update; yum clean all
-RUN yum -y install openssh-server passwd; yum clean all
-ADD ./start.sh /start.sh
-RUN mkdir /var/run/sshd
+# 下载 noVNC
+WORKDIR /
+RUN wget https://github.com/novnc/noVNC/archive/refs/tags/v1.2.0.tar.gz && \
+    tar -xvf v1.2.0.tar.gz && \
+    mv noVNC-1.2.0 /noVNC
 
-RUN ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N '' 
+# 定义用户
+ENV USER luo
+ENV HOME /home/$USER
 
-RUN chmod 755 /start.sh
-# EXPOSE 22
-RUN ./start.sh
-ENTRYPOINT ["/usr/sbin/sshd", "-D"]
+# 添加用户
+RUN useradd -ms /bin/bash $USER
+
+# 切换用户
+USER $USER
+
+# 设置 VNC 密码
+RUN mkdir -p $HOME/.vnc && \
+    echo 'luo' | vncpasswd -f > $HOME/.vnc/passwd && \
+    chmod 600 $HOME/.vnc/passwd
+
+# 添加启动脚本
+RUN echo '#!/bin/bash' >> $HOME/luoshell.sh && \
+    echo 'vncserver :2000 -geometry 1280x800' >> $HOME/luoshell.sh && \
+    echo 'cd /noVNC' >> $HOME/luoshell.sh && \
+    echo './utils/launch.sh --vnc localhost:7900 --listen 8900' >> $HOME/luoshell.sh && \
+    chmod +x $HOME/luoshell.sh
+
+EXPOSE 8900
+
+CMD $HOME/luoshell.sh
