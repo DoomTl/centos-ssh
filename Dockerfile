@@ -1,4 +1,4 @@
-FROM archlinux:base-devel-20231029.0.188123
+FROM archlinux
 RUN pacman -Syyu --noconfirm && \
     pacman -S wget git vim inetutils python3 gnome-system-monitor mate-system-monitor tigervnc xfce4 xfce4-terminal nginx --noconfirm && \
     nginx && \
