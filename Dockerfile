@@ -1,50 +1,24 @@
-FROM debian:buster
-
-RUN apt update && \
-    apt install -y \
-    qemu-kvm \
-    *zenhei* \
-    xz-utils \
-    dbus-x11 \
-    curl \
-    firefox-esr \
-    gnome-system-monitor \
-    mate-system-monitor \
-    git \
-    xfce4 \
-    xfce4-terminal \
-    tightvncserver \
-    wget && \
-    rm -rf /var/lib/apt/lists/*
-
-# 下载 noVNC
-WORKDIR /
-RUN wget https://github.com/novnc/noVNC/archive/refs/tags/v1.2.0.tar.gz && \
+FROM archlinux:base-devel-20231029.0.188123
+RUN pacman -Syyu --noconfirm && \
+    pacman -S wget git vim inetutils python3 gnome-system-monitor mate-system-monitor tigervnc xfce4 xfce4-terminal nginx --noconfirm && \
+    nginx && \
+    wget https://github.com/novnc/noVNC/archive/refs/tags/v1.2.0.tar.gz && \
+    curl -LO https://proot.gitlab.io/proot/bin/proot && \
+    chmod 755 proot && \
+    mv proot /bin && \
     tar -xvf v1.2.0.tar.gz && \
-    mv noVNC-1.2.0 /noVNC
-
-# 定义用户
-ENV USER luo
-ENV HOME /home/$USER
-
-# 添加用户
-RUN useradd -ms /bin/bash $USER
-
-# 切换用户
-USER $USER
-
-# 设置 VNC 密码
-RUN mkdir -p $HOME/.vnc && \
-    echo 'luo' | vncpasswd -f > $HOME/.vnc/passwd && \
+    mkdir  $HOME/.vnc && \
+    echo 'tl' | vncpasswd -f > $HOME/.vnc/passwd && \
+    echo ':2000=tl' >> /etc/tigervnc/vncserver.users && \
     chmod 600 $HOME/.vnc/passwd
 
-# 添加启动脚本
-RUN echo '#!/bin/bash' >> $HOME/luoshell.sh && \
-    echo 'vncserver :2000 -geometry 1280x800' >> $HOME/luoshell.sh && \
-    echo 'cd /noVNC' >> $HOME/luoshell.sh && \
-    echo './utils/launch.sh --vnc localhost:7900 --listen 8900' >> $HOME/luoshell.sh && \
-    chmod +x $HOME/luoshell.sh
-
-EXPOSE 8900
-
-CMD $HOME/luoshell.sh
+# 设置启动脚本
+RUN echo '#!/bin/bash' >> /start.sh && \
+    echo 'whoami ' >> /start.sh && \
+    echo 'cd ' >> /start.sh && \
+    echo 'cd /noVNC-1.2.0' >> /start.sh && \
+    echo './utils/launch.sh --vnc localhost:7900 --listen 8900 &' >> /start.sh && \
+    echo "vncserver :2000" >> /start.sh && \
+    chmod 755 /start.sh
+EXPOSE 8900 80
+CMD  /start.sh
