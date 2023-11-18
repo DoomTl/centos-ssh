@@ -1,7 +1,6 @@
 FROM archlinux:base-devel-20231029.0.188123
 RUN pacman -Syyu --noconfirm && \
-    pacman -S wget git vim inetutils python3 gnome-system-monitor mate-system-monitor tigervnc xfce4 xfce4-terminal nginx --noconfirm && \
-    nginx && \
+    pacman -S wget git vim inetutils python3 gnome-system-monitor mate-system-monitor tigervnc xfce4 xfce4-terminal --noconfirm && \
     wget https://github.com/novnc/noVNC/archive/refs/tags/v1.2.0.tar.gz && \
     curl -LO https://proot.gitlab.io/proot/bin/proot && \
     chmod 755 proot && \
@@ -20,5 +19,5 @@ RUN echo '#!/bin/bash' >> /start.sh && \
     echo './utils/launch.sh --vnc localhost:7900 --listen 8900 &' >> /start.sh && \
     echo "vncserver :2000" >> /start.sh && \
     chmod 755 /start.sh
-EXPOSE 8900 80
+EXPOSE 8900
 CMD  /start.sh
